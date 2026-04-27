@@ -16,6 +16,13 @@ export default function TemplateEdit() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(!isNew)
+  const [stocks, setStocks] = useState([])
+
+  useEffect(() => {
+    // 종목 목록 로드
+    supabase.from('stocks').select('symbol, name, sector').order('symbol')
+      .then(({ data }) => setStocks(data || []))
+  }, [])
 
   useEffect(() => {
     if (!templateId) return
@@ -121,56 +128,97 @@ export default function TemplateEdit() {
       <div className="card p-6 bg-gold-50/30 space-y-4">
         <h3 className="font-display text-lg text-gold-700">📊 주가 영향</h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-charcoal mb-2">
-              주 영향 종목 <span className="text-up">*</span>
-            </label>
-            <input
-              value={stockSymbol}
-              onChange={e => setStockSymbol(e.target.value.toUpperCase())}
-              className="input-field num-display"
-              placeholder="GOLD"
-            />
+        <div className="space-y-3">
+          {/* 주 영향 종목 */}
+          <div className="bg-white rounded p-3 border border-gold-500/20">
+            <div className="text-xs font-semibold text-stone uppercase tracking-wider mb-2">
+              🎯 주 영향 종목 <span className="text-up">*</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2">
+              <select
+                value={stockSymbol}
+                onChange={e => setStockSymbol(e.target.value)}
+                className="input-field"
+              >
+                <option value="">-- 종목 선택 --</option>
+                {stocks.map(s => (
+                  <option key={s.symbol} value={s.symbol}>
+                    {s.symbol} · {s.name} ({s.sector})
+                  </option>
+                ))}
+              </select>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  step="0.5"
+                  value={mainImpact}
+                  onChange={e => setMainImpact(e.target.value)}
+                  className="input-field num-display text-center"
+                  placeholder="5"
+                />
+                <span className="text-sm text-stone shrink-0">%</span>
+              </div>
+            </div>
+            {stockSymbol && (
+              <div className="text-xs mt-2 px-2 py-1 rounded bg-gold-50">
+                {mainImpact > 0 ? (
+                  <span className="text-up font-semibold">📈 {stockSymbol} +{mainImpact}% 상승</span>
+                ) : mainImpact < 0 ? (
+                  <span className="text-down font-semibold">📉 {stockSymbol} {mainImpact}% 하락</span>
+                ) : (
+                  <span className="text-stone">변동 없음</span>
+                )}
+              </div>
+            )}
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-charcoal mb-2">
-              주 변동률 (%)
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              value={mainImpact}
-              onChange={e => setMainImpact(e.target.value)}
-              className="input-field num-display"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-charcoal mb-2">
-              부 영향 종목 (선택)
-            </label>
-            <input
-              value={secSymbol}
-              onChange={e => setSecSymbol(e.target.value.toUpperCase())}
-              className="input-field num-display"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-charcoal mb-2">
-              부 변동률 (%)
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              value={secImpact}
-              onChange={e => setSecImpact(e.target.value)}
-              className="input-field num-display"
-            />
+
+          {/* 부 영향 종목 (선택) */}
+          <div className="bg-white rounded p-3 border border-gold-500/20">
+            <div className="text-xs font-semibold text-stone uppercase tracking-wider mb-2">
+              🔗 부 영향 종목 (선택)
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2">
+              <select
+                value={secSymbol}
+                onChange={e => setSecSymbol(e.target.value)}
+                className="input-field"
+              >
+                <option value="">-- 선택 안 함 --</option>
+                {stocks
+                  .filter(s => s.symbol !== stockSymbol)
+                  .map(s => (
+                    <option key={s.symbol} value={s.symbol}>
+                      {s.symbol} · {s.name} ({s.sector})
+                    </option>
+                  ))}
+              </select>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  step="0.5"
+                  value={secImpact}
+                  onChange={e => setSecImpact(e.target.value)}
+                  className="input-field num-display text-center"
+                  placeholder="0"
+                  disabled={!secSymbol}
+                />
+                <span className="text-sm text-stone shrink-0">%</span>
+              </div>
+            </div>
+            {secSymbol && secImpact != 0 && (
+              <div className="text-xs mt-2 px-2 py-1 rounded bg-gold-50">
+                {secImpact > 0 ? (
+                  <span className="text-up font-semibold">📈 {secSymbol} +{secImpact}% 상승</span>
+                ) : (
+                  <span className="text-down font-semibold">📉 {secSymbol} {secImpact}% 하락</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         <p className="text-xs text-stone">
-          💡 사용 가능한 종목: GOLD, SMRT, GRNE, MEDI, FOOD, AUTO, BANK, GAME, SHOP, EDU, SHIP, AIRX
+          💡 산업 연관성을 고려해 부 종목도 함께 변동시킬 수 있어요. (예: 외식업 호재 → 배달앱도 동반 상승)
         </p>
       </div>
 
