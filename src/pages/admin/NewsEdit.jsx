@@ -10,6 +10,7 @@ export default function NewsEdit() {
 
   const [slot, setSlot] = useState(null)
   const [templates, setTemplates] = useState([])
+  const [stocks, setStocks] = useState([])
   const [loading, setLoading] = useState(true)
 
   // 폼 필드
@@ -33,6 +34,10 @@ export default function NewsEdit() {
       // 템플릿 목록 로드
       const { data: tmpl } = await supabase.from('news_templates').select('*').order('title')
       setTemplates(tmpl || [])
+      
+      // 종목 목록 로드
+      const { data: stockList } = await supabase.from('stocks').select('symbol, name, sector').order('symbol')
+      setStocks(stockList || [])
 
       // 기존 슬롯이면 데이터 로드
       if (slotId) {
@@ -268,49 +273,98 @@ export default function NewsEdit() {
             <div className="bg-gold-50/40 rounded p-4 space-y-4">
               <h4 className="font-semibold text-gold-700">📊 주가 영향</h4>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-stone mb-1">주 종목</label>
-                  <input
-                    value={customSymbol}
-                    onChange={e => setCustomSymbol(e.target.value.toUpperCase())}
-                    className="input-field num-display"
-                    placeholder="GOLD"
-                  />
+              <div className="space-y-3">
+                {/* 주 영향 종목 */}
+                <div className="bg-white rounded p-3 border border-gold-500/20">
+                  <div className="text-xs font-semibold text-stone uppercase tracking-wider mb-2">
+                    🎯 주 영향 종목
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2">
+                    <select
+                      value={customSymbol}
+                      onChange={e => setCustomSymbol(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">-- 종목 선택 --</option>
+                      {stocks.map(s => (
+                        <option key={s.symbol} value={s.symbol}>
+                          {s.symbol} · {s.name} ({s.sector})
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={customImpact}
+                        onChange={e => setCustomImpact(e.target.value)}
+                        className="input-field num-display text-center"
+                        placeholder="5"
+                      />
+                      <span className="text-sm text-stone shrink-0">%</span>
+                    </div>
+                  </div>
+                  {customSymbol && (
+                    <div className="text-xs mt-2 px-2 py-1 rounded bg-gold-50">
+                      {customImpact > 0 ? (
+                        <span className="text-up font-semibold">📈 {customSymbol} +{customImpact}% 상승</span>
+                      ) : customImpact < 0 ? (
+                        <span className="text-down font-semibold">📉 {customSymbol} {customImpact}% 하락</span>
+                      ) : (
+                        <span className="text-stone">변동 없음</span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-stone mb-1">변동률 (%)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={customImpact}
-                    onChange={e => setCustomImpact(e.target.value)}
-                    className="input-field num-display"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-stone mb-1">부 종목 (선택)</label>
-                  <input
-                    value={customSymbol2}
-                    onChange={e => setCustomSymbol2(e.target.value.toUpperCase())}
-                    className="input-field num-display"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-stone mb-1">부 변동률</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={customImpact2}
-                    onChange={e => setCustomImpact2(e.target.value)}
-                    className="input-field num-display"
-                  />
-                </div>
-              </div>
 
-              <p className="text-xs text-stone">
-                종목: GOLD, SMRT, GRNE, MEDI, FOOD, AUTO, BANK, GAME, SHOP, EDU, SHIP, AIRX
-              </p>
+                {/* 부 영향 종목 (선택) */}
+                <div className="bg-white rounded p-3 border border-gold-500/20">
+                  <div className="text-xs font-semibold text-stone uppercase tracking-wider mb-2">
+                    🔗 부 영향 종목 (선택)
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2">
+                    <select
+                      value={customSymbol2}
+                      onChange={e => setCustomSymbol2(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">-- 선택 안 함 --</option>
+                      {stocks
+                        .filter(s => s.symbol !== customSymbol)
+                        .map(s => (
+                          <option key={s.symbol} value={s.symbol}>
+                            {s.symbol} · {s.name} ({s.sector})
+                          </option>
+                        ))}
+                    </select>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={customImpact2}
+                        onChange={e => setCustomImpact2(e.target.value)}
+                        className="input-field num-display text-center"
+                        placeholder="0"
+                        disabled={!customSymbol2}
+                      />
+                      <span className="text-sm text-stone shrink-0">%</span>
+                    </div>
+                  </div>
+                  {customSymbol2 && customImpact2 != 0 && (
+                    <div className="text-xs mt-2 px-2 py-1 rounded bg-gold-50">
+                      {customImpact2 > 0 ? (
+                        <span className="text-up font-semibold">📈 {customSymbol2} +{customImpact2}% 상승</span>
+                      ) : (
+                        <span className="text-down font-semibold">📉 {customSymbol2} {customImpact2}% 하락</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-xs text-stone">
+                  💡 산업 연관성을 고려해 부 종목도 함께 변동시킬 수 있어요. (예: 외식업 호재 → 배달앱도 동반 상승)
+                </p>
+              </div>
             </div>
           </div>
         )}
