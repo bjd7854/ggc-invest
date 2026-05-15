@@ -7,6 +7,7 @@ import Trade from './pages/Trade'
 import StockDetail from './pages/StockDetail'
 import Quiz from './pages/Quiz'
 import Ranking from './pages/Ranking'
+import News from './pages/News'
 import Admin from './pages/admin/Admin'
 import TournamentCreate from './pages/admin/TournamentCreate'
 import NewsEdit from './pages/admin/NewsEdit'
@@ -32,6 +33,7 @@ export default function App() {
       <Route path="/stock/:stockId" element={<WithLayout><StockDetail /></WithLayout>} />
       <Route path="/quiz"      element={<WithLayout><Quiz /></WithLayout>} />
       <Route path="/ranking"   element={<WithLayout><Ranking /></WithLayout>} />
+      <Route path="/news"      element={<WithLayout><News /></WithLayout>} />
       <Route path="/admin"     element={<WithLayout adminOnly requireTournament={false}><Admin /></WithLayout>} />
       <Route path="/admin/tournament/new" element={<WithLayout adminOnly requireTournament={false}><TournamentCreate /></WithLayout>} />
       <Route path="/admin/news/new" element={<WithLayout adminOnly requireTournament={false}><NewsEdit /></WithLayout>} />
