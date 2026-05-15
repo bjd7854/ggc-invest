@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, formatKRW, changeRate } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useRealtimeStocks, useRealtimeHoldings } from '../hooks/useRealtime'
-import NewsHistoryModal from '../components/NewsHistoryModal'
 import RouletteWidget from '../components/RouletteWidget'
 
 export default function Trade() {
@@ -14,7 +13,6 @@ export default function Trade() {
   const [loading, setLoading] = useState(true)
   // 활성화된 거래 카드: { stockId, mode: 'buy'|'sell' }
   const [activeTrade, setActiveTrade] = useState(null)
-  const [showNewsHistory, setShowNewsHistory] = useState(false)
 
   const loadAll = async () => {
     const [s, h] = await Promise.all([
@@ -71,18 +69,8 @@ export default function Trade() {
           <div className="text-[11px] tracking-[0.4em] text-gold-600 uppercase">Trading Floor</div>
           <span className="badge-live text-[9px]">실시간</span>
         </div>
-        <div className="flex items-start justify-between gap-3 mt-2">
-          <div className="flex-1">
-            <h1 className="font-display text-3xl sm:text-4xl">거래소</h1>
-            <p className="text-stone text-sm mt-2">매수/매도 버튼을 누르면 카드 바로 옆에 입력창이 펼쳐져요 📈</p>
-          </div>
-          <button
-            onClick={() => setShowNewsHistory(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold-50 hover:bg-gold-100 text-gold-700 text-xs sm:text-sm font-semibold border border-gold-500/30 whitespace-nowrap"
-          >
-            📰 <span className="hidden sm:inline">뉴스 기록</span>
-          </button>
-        </div>
+        <h1 className="font-display text-3xl sm:text-4xl mt-2">거래소</h1>
+        <p className="text-stone text-sm mt-2">매수/매도 버튼을 누르면 카드 바로 옆에 입력창이 펼쳐져요 📈</p>
       </div>
 
       {/* 룰렛 이벤트 (활성화 시에만 표시됨) */}
@@ -166,12 +154,6 @@ export default function Trade() {
           })}
         </div>
       )}
-
-      {/* 이전 뉴스 모달 */}
-      <NewsHistoryModal 
-        open={showNewsHistory} 
-        onClose={() => setShowNewsHistory(false)} 
-      />
     </div>
   )
 }
