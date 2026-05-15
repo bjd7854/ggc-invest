@@ -10,6 +10,7 @@ const TABS = [
   { key: 'template',   label: '📋 뉴스 풀' },
   { key: 'quiz',       label: '📝 퀴즈' },
   { key: 'stock',      label: '💹 종목가' },
+  { key: 'roulette',   label: '🎰 룰렛' },
   { key: 'student',    label: '👥 학생' }
 ]
 
@@ -42,6 +43,7 @@ export default function Admin() {
       {tab === 'template'   && <TemplateAdmin />}
       {tab === 'quiz'       && <QuizAdmin />}
       {tab === 'stock'      && <StockAdmin />}
+      {tab === 'roulette'   && <RouletteAdmin />}
       {tab === 'student'    && <StudentAdmin />}
     </div>
   )
@@ -1407,6 +1409,290 @@ function StudentAdmin() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/* ============================================================= */
+/* 🎰 룰렛 이벤트 (v20 신규)                                       */
+/* ============================================================= */
+function RouletteAdmin() {
+  const [activeEvent, setActiveEvent] = useState(null)
+  const [stats, setStats] = useState(null)
+  const [busy, setBusy] = useState(false)
+  
+  // 폼
+  const [title, setTitle] = useState('🎰 깜짝 룰렛 이벤트!')
+  const [prize1, setPrize1] = useState(50000)
+  const [prize2, setPrize2] = useState(100000)
+  const [prize3, setPrize3] = useState(200000)
+  const [prize4, setPrize4] = useState(400000)
+  const [maxSpins, setMaxSpins] = useState(1)
+  const [entryCost, setEntryCost] = useState(0)
+  const [duration, setDuration] = useState(10)
+
+  const loadActive = async () => {
+    const { data } = await supabase.rpc('get_active_roulette')
+    setActiveEvent(data?.[0] || null)
+  }
+
+  const loadStats = async (eventId) => {
+    if (!eventId) { setStats(null); return }
+    const { data } = await supabase.rpc('admin_get_roulette_stats', { p_event_id: eventId })
+    setStats(data)
+  }
+
+  useEffect(() => {
+    loadActive()
+    const interval = setInterval(loadActive, 10000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (activeEvent) loadStats(activeEvent.id)
+    else setStats(null)
+  }, [activeEvent])
+
+  const startRoulette = async () => {
+    if (!prize1 || !prize2 || !prize3 || !prize4) {
+      return alert('모든 금액을 입력해주세요')
+    }
+    if (prize1 < 0 || prize2 < 0 || prize3 < 0 || prize4 < 0) {
+      return alert('금액은 0 이상이어야 합니다')
+    }
+    
+    if (!confirm(
+      `룰렛 이벤트를 시작할까요?\n\n` +
+      `상금: ${formatKRW(prize1)} / ${formatKRW(prize2)} / ${formatKRW(prize3)} / ${formatKRW(prize4)}\n` +
+      `참여 횟수: ${maxSpins}회\n` +
+      `참여 비용: ${entryCost > 0 ? formatKRW(entryCost) + '원' : '무료'}\n` +
+      `활성 시간: ${duration}분`
+    )) return
+    
+    setBusy(true)
+    try {
+      const { error } = await supabase.rpc('admin_create_roulette', {
+        p_prize_1: Number(prize1),
+        p_prize_2: Number(prize2),
+        p_prize_3: Number(prize3),
+        p_prize_4: Number(prize4),
+        p_max_spins: Number(maxSpins),
+        p_entry_cost: Number(entryCost),
+        p_duration_minutes: Number(duration),
+        p_title: title || '🎰 룰렛 이벤트'
+      })
+      if (error) throw error
+      
+      alert('🎰 룰렛 이벤트 시작!')
+      loadActive()
+    } catch (e) {
+      alert('시작 실패: ' + e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const endRoulette = async () => {
+    if (!activeEvent) return
+    if (!confirm('진행 중인 룰렛을 즉시 종료할까요?')) return
+    
+    try {
+      await supabase.rpc('admin_end_roulette', { p_event_id: activeEvent.id })
+      loadActive()
+      alert('룰렛이 종료되었습니다')
+    } catch (e) {
+      alert('종료 실패: ' + e.message)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      
+      {/* 진행 중인 이벤트 */}
+      {activeEvent && (
+        <div className="card p-5 bg-gradient-to-br from-gold-50/70 to-amber-50/50 border-2 border-gold-500/40">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-display text-lg">{activeEvent.title}</h3>
+              <p className="text-xs text-stone mt-1">
+                종료 예정: {new Date(activeEvent.ends_at).toLocaleString('ko-KR')}
+              </p>
+            </div>
+            <span className="badge-live text-[10px]">진행 중</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+            <PrizeSlot num={1} prize={activeEvent.prize_1} count={stats?.slot_1_count || 0} />
+            <PrizeSlot num={2} prize={activeEvent.prize_2} count={stats?.slot_2_count || 0} />
+            <PrizeSlot num={3} prize={activeEvent.prize_3} count={stats?.slot_3_count || 0} />
+            <PrizeSlot num={4} prize={activeEvent.prize_4} count={stats?.slot_4_count || 0} />
+          </div>
+
+          {stats && (
+            <div className="grid grid-cols-3 gap-2 mb-4 text-center">
+              <div className="bg-white/60 rounded p-2">
+                <div className="text-[10px] text-stone uppercase">참여자</div>
+                <div className="num-display font-bold">{stats.participants}명</div>
+              </div>
+              <div className="bg-white/60 rounded p-2">
+                <div className="text-[10px] text-stone uppercase">총 참여</div>
+                <div className="num-display font-bold">{stats.total_spins}회</div>
+              </div>
+              <div className="bg-white/60 rounded p-2">
+                <div className="text-[10px] text-stone uppercase">순 지급</div>
+                <div className="num-display font-bold text-gold-700">
+                  {formatKRW(stats.net_distributed)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={endRoulette}
+            className="w-full py-2 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-semibold"
+          >
+            ⏹️ 즉시 종료
+          </button>
+        </div>
+      )}
+
+      {/* 새 룰렛 만들기 */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-lg">🎰 새 룰렛 이벤트 만들기</h3>
+          {activeEvent && (
+            <span className="text-xs text-stone bg-stone-100 px-2 py-1 rounded">
+              새로 만들면 기존 이벤트는 자동 종료됨
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          {/* 제목 */}
+          <div>
+            <label className="block text-xs text-stone uppercase tracking-wider mb-1">이벤트 제목</label>
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="input-field"
+              placeholder="🎰 깜짝 룰렛 이벤트!"
+            />
+          </div>
+
+          {/* 4칸 상금 */}
+          <div>
+            <label className="block text-xs text-stone uppercase tracking-wider mb-2">
+              4칸 상금 (균등 25% 확률)
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <PrizeInput num={1} value={prize1} onChange={setPrize1} />
+              <PrizeInput num={2} value={prize2} onChange={setPrize2} />
+              <PrizeInput num={3} value={prize3} onChange={setPrize3} />
+              <PrizeInput num={4} value={prize4} onChange={setPrize4} />
+            </div>
+          </div>
+
+          {/* 설정 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <label className="block text-xs text-stone uppercase tracking-wider mb-1">
+                참여 횟수
+              </label>
+              <NumberInput value={maxSpins} onChange={setMaxSpins} className="num-display" />
+            </div>
+            <div>
+              <label className="block text-xs text-stone uppercase tracking-wider mb-1">
+                참여 비용 (원)
+              </label>
+              <NumberInput 
+                value={entryCost} 
+                onChange={setEntryCost} 
+                placeholder="0 = 무료"
+                className="num-display"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-stone uppercase tracking-wider mb-1">
+                활성 시간 (분)
+              </label>
+              <NumberInput value={duration} onChange={setDuration} className="num-display" />
+            </div>
+          </div>
+
+          {/* 빠른 프리셋 */}
+          <div>
+            <label className="block text-xs text-stone uppercase tracking-wider mb-2">빠른 설정</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => { setPrize1(50000); setPrize2(100000); setPrize3(200000); setPrize4(400000); }}
+                className="text-xs py-2 rounded bg-gold-50 hover:bg-gold-100 border border-gold-500/20"
+              >
+                💰 표준<br/>
+                <span className="text-[10px] text-stone">5/10/20/40만</span>
+              </button>
+              <button
+                onClick={() => { setPrize1(10000); setPrize2(50000); setPrize3(100000); setPrize4(200000); }}
+                className="text-xs py-2 rounded bg-gold-50 hover:bg-gold-100 border border-gold-500/20"
+              >
+                🪙 작게<br/>
+                <span className="text-[10px] text-stone">1/5/10/20만</span>
+              </button>
+              <button
+                onClick={() => { setPrize1(100000); setPrize2(300000); setPrize3(500000); setPrize4(1000000); }}
+                className="text-xs py-2 rounded bg-red-50 hover:bg-red-100 border border-red-200 text-up"
+              >
+                🎆 크게<br/>
+                <span className="text-[10px]">10/30/50/100만</span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={startRoulette}
+            disabled={busy}
+            className="btn-gold w-full py-3 rounded font-bold"
+          >
+            {busy ? '시작 중...' : '🎰 룰렛 이벤트 시작!'}
+          </button>
+        </div>
+      </div>
+
+      {/* 사용 안내 */}
+      <div className="card p-4 bg-stone-50/50">
+        <p className="text-xs text-stone leading-relaxed">
+          💡 <strong>룰렛 이벤트 안내</strong><br/>
+          - 학생들에게 자동 알림이 전송됩니다<br/>
+          - 4칸 균등 확률 (각 25%)<br/>
+          - 학생은 거래소 페이지에서 참여 가능<br/>
+          - 활성 시간 동안만 참여 가능, 자동 종료됨<br/>
+          - 참여 비용 설정 시 학생 잔액에서 차감
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function PrizeInput({ num, value, onChange }) {
+  return (
+    <div>
+      <div className="text-[10px] text-stone mb-1">{num}번 칸</div>
+      <NumberInput 
+        value={value} 
+        onChange={onChange}
+        className="num-display"
+      />
+    </div>
+  )
+}
+
+function PrizeSlot({ num, prize, count }) {
+  return (
+    <div className="bg-white/80 rounded p-2 text-center">
+      <div className="text-[9px] text-stone uppercase">{num}번 칸</div>
+      <div className="num-display font-bold text-sm sm:text-base text-gold-700">
+        {formatKRW(prize)}
+      </div>
+      <div className="text-[10px] text-stone mt-1">{count}명 당첨</div>
     </div>
   )
 }
