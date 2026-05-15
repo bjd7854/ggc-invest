@@ -77,6 +77,7 @@ export default function Layout({ children }) {
               <nav className="hidden lg:flex items-center gap-1">
                 <NavLink to="/" end className={link}>대시보드</NavLink>
                 <NavLink to="/trade" className={link}>거래소</NavLink>
+                <NavLink to="/news" className={link}>뉴스</NavLink>
                 <NavLink to="/quiz" className={link}>퀴즈</NavLink>
                 <NavLink to="/ranking" className={link}>순위표</NavLink>
                 {isAdmin && <NavLink to="/admin" className={link}>관리자</NavLink>}
@@ -127,6 +128,7 @@ export default function Layout({ children }) {
               <>
                 <NavLink to="/" end className={mobileLink}>📊 대시보드</NavLink>
                 <NavLink to="/trade" className={mobileLink}>💱 거래소</NavLink>
+                <NavLink to="/news" className={mobileLink}>📰 뉴스</NavLink>
                 <NavLink to="/quiz" className={mobileLink}>📝 퀴즈</NavLink>
                 <NavLink to="/ranking" className={mobileLink}>🏆 순위표</NavLink>
               </>
