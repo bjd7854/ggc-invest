@@ -16,9 +16,6 @@ export default function TournamentCreate() {
   const [initialMoney, setInitialMoney] = useState(1000000)
   const [newsTimes, setNewsTimes] = useState('10:30,11:30,12:30,13:30')
   const [priceDelay, setPriceDelay] = useState(5)
-  // 🎲 랜덤 변동 설정 추가
-  const [randomInterval, setRandomInterval] = useState(10)  // 분
-  const [randomRange, setRandomRange] = useState(0.3)       // %
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -52,15 +49,6 @@ export default function TournamentCreate() {
     return `${(hours / 24).toFixed(1)}일 (${Math.round(hours)}시간)`
   })()
 
-  // 🎲 랜덤 변동 시뮬레이션 (대회 중 변동 횟수)
-  const randomFluctCount = (() => {
-    const s = new Date(startAt), e = new Date(endAt)
-    if (isNaN(s) || isNaN(e) || s >= e) return 0
-    const minutes = (e - s) / 60000
-    const interval = Number(randomInterval) || 10
-    return Math.floor(minutes / interval)
-  })()
-
   const save = async () => {
     setError('')
     
@@ -87,8 +75,6 @@ export default function TournamentCreate() {
         initial_money: Number(initialMoney) || 1000000,
         news_times: newsTimes || '',
         price_delay_minutes: Number(priceDelay) || 5,
-        random_interval_minutes: Number(randomInterval) || 10,
-        random_range_pct: Number(randomRange) || 0.3,
         status: s <= new Date() ? 'active' : 'upcoming'
       }
 
@@ -254,70 +240,6 @@ export default function TournamentCreate() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* 🎲 랜덤 가격 변동 */}
-      <div className="card p-6 bg-blue-50/30 space-y-4 border-blue-500/20">
-        <div>
-          <h3 className="font-display text-lg text-down mb-1">🎲 랜덤 가격 변동</h3>
-          <p className="text-xs text-stone">뉴스 외에도 주가가 자연스럽게 움직이도록 설정</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-charcoal mb-2">
-              🔄 변동 주기 (분)
-            </label>
-            <div className="flex items-center gap-2">
-              <input 
-                type="number" 
-                min="1" 
-                max="60" 
-                value={randomInterval}
-                onChange={e => setRandomInterval(e.target.value)}
-                className="input-field num-display w-28" 
-              />
-              <span className="text-sm text-stone">분마다</span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-charcoal mb-2">
-              📊 변동폭 (%)
-            </label>
-            <div className="flex items-center gap-2">
-              <input 
-                type="number" 
-                step="0.1"
-                min="0.1" 
-                max="2" 
-                value={randomRange}
-                onChange={e => setRandomRange(e.target.value)}
-                className="input-field num-display w-28" 
-              />
-              <span className="text-sm text-stone">% 이내</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded p-3 border border-blue-500/15 text-sm">
-          <div className="font-semibold text-down mb-2">
-            📊 대회 중 예상 랜덤 변동: 약 {randomFluctCount}회
-          </div>
-          <div className="text-xs text-stone space-y-1">
-            <div>· 매 <b>{randomInterval}분</b>마다 종목들이 <b>±{randomRange}%</b> 내에서 랜덤 변동</div>
-            <div>· 뉴스로 변동된 종목은 5분 동안 제외 (중복 방지)</div>
-          </div>
-        </div>
-
-        <div className="bg-blue-50 rounded p-3 text-xs text-charcoal leading-relaxed">
-          💡 <b>추천 설정</b>
-          <div className="mt-1 space-y-0.5">
-            <div>· <b>짧은 대회 (4시간)</b>: 5~10분 / 0.2~0.3%</div>
-            <div>· <b>하루 대회 (8시간)</b>: 10~15분 / 0.3~0.5%</div>
-            <div>· <b>긴 대회 (1주일+)</b>: 30~60분 / 0.5~1%</div>
-          </div>
-        </div>
       </div>
 
       <div className="flex gap-3 sticky bottom-4 bg-ivory/90 backdrop-blur-sm p-3 rounded-lg border border-gold-500/20">
