@@ -78,62 +78,79 @@ function NewsCard({ news }) {
   })
 
   const impacts = Array.isArray(news.impacts) ? news.impacts : []
-  const positiveCount = impacts.filter(i => i.impact_pct > 0).length
-  const negativeCount = impacts.filter(i => i.impact_pct < 0).length
-  
-  const sentiment = positiveCount > negativeCount ? 'positive'
-                  : negativeCount > positiveCount ? 'negative'
-                  : 'neutral'
-  
-  const sentimentStyle = {
-    positive: 'border-l-4 border-up bg-red-50/30',
-    negative: 'border-l-4 border-down bg-blue-50/30',
-    neutral: 'border-l-4 border-stone-300 bg-stone-50/30'
-  }[sentiment]
-  
-  const sentimentEmoji = {
-    positive: '🟢',
-    negative: '🔴',
-    neutral: '⚪'
-  }[sentiment]
+  // 가격 반영 여부 (백엔드가 반영 전엔 impacts를 빈 배열로 줌)
+  const revealed = news.price_applied === true
 
   return (
-    <div className={`card ${sentimentStyle} p-4 sm:p-5`}>
+    <div className={`card p-4 sm:p-5 ${
+      revealed 
+        ? 'border-l-4 border-gold-500 bg-gold-50/20' 
+        : 'border-l-4 border-stone-300 bg-stone-50/20'
+    }`}>
       <div className="flex items-start justify-between mb-2 gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl shrink-0">{news.emoji || sentimentEmoji}</span>
+            <span className="text-xl shrink-0">📰</span>
             <h3 className="font-display text-base sm:text-lg font-semibold leading-tight">
               {news.title}
             </h3>
           </div>
           <div className="text-[11px] text-stone mt-1">{time}</div>
         </div>
+        {/* 상태 배지 */}
+        {revealed ? (
+          <span className="text-[10px] px-2 py-1 rounded-full bg-gold-500/15 text-gold-700 font-semibold whitespace-nowrap shrink-0">
+            ✓ 반영 완료
+          </span>
+        ) : (
+          <span className="text-[10px] px-2 py-1 rounded-full bg-stone-200 text-stone-600 font-semibold whitespace-nowrap shrink-0">
+            🔮 예측하기
+          </span>
+        )}
       </div>
       
       <p className="text-sm text-charcoal/80 leading-relaxed whitespace-pre-line mb-3 mt-2">
         {news.body || ''}
       </p>
       
-      {impacts.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pt-3 border-t border-stone-200/50">
-          <span className="text-[10px] text-stone uppercase tracking-wider mr-1 self-center font-semibold">
-            영향:
-          </span>
-          {impacts.map((imp, idx) => (
-            <span 
-              key={idx}
-              className={`text-xs px-2 py-0.5 rounded font-semibold ${
-                imp.impact_pct > 0 
-                  ? 'bg-red-100 text-up' 
-                  : imp.impact_pct < 0 
-                  ? 'bg-blue-100 text-down' 
-                  : 'bg-stone-100 text-stone'
-              }`}
-            >
-              {imp.symbol} {imp.impact_pct > 0 ? '+' : ''}{imp.impact_pct}%
+      {revealed ? (
+        /* ===== 반영 후: 영향 종목 공개 ===== */
+        impacts.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 pt-3 border-t border-gold-500/20">
+            <span className="text-[10px] text-stone uppercase tracking-wider mr-1 self-center font-semibold">
+              영향:
             </span>
-          ))}
+            {impacts.map((imp, idx) => (
+              <span 
+                key={idx}
+                className={`text-xs px-2 py-0.5 rounded font-semibold ${
+                  imp.impact_pct > 0 
+                    ? 'bg-red-100 text-up' 
+                    : imp.impact_pct < 0 
+                    ? 'bg-blue-100 text-down' 
+                    : 'bg-stone-100 text-stone'
+                }`}
+              >
+                {imp.symbol} {imp.impact_pct > 0 ? '+' : ''}{imp.impact_pct}%
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div className="pt-3 border-t border-gold-500/20 text-xs text-stone">
+            이 뉴스는 특정 종목에 영향을 주지 않았어요
+          </div>
+        )
+      ) : (
+        /* ===== 반영 전: 영향 종목 숨김 + 예측 유도 ===== */
+        <div className="pt-3 border-t border-stone-200/50">
+          <div className="bg-white/60 rounded-lg px-3 py-2.5 text-center">
+            <div className="text-sm font-semibold text-charcoal mb-0.5">
+              🔮 어떤 종목이 움직일까요?
+            </div>
+            <div className="text-[11px] text-stone">
+              뉴스를 분석해서 예측해보세요! 가격이 반영되면 정답이 공개돼요
+            </div>
+          </div>
         </div>
       )}
     </div>
