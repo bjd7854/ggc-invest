@@ -101,7 +101,14 @@ export default function Tournaments() {
 
 function TournamentCard({ t, participant, onEnter, busy, upcoming }) {
   const joined = !!participant
-  const typeLabel = t.type === 'short' ? '⏰ 하루 대회' : '📅 한달 대회'
+
+  // 기간 자동 분류 (start_at ~ end_at 차이 기준)
+  const durationMs = new Date(t.end_at) - new Date(t.start_at)
+  const durationHours = durationMs / (1000 * 60 * 60)
+  const typeLabel =
+    durationHours < 24    ? '⚡ 단기 대회' :
+    durationHours < 24*7  ? '📅 중기 대회' :
+                            '🏆 장기 대회'
 
   return (
     <div className={`card p-6 ${upcoming ? 'opacity-70' : 'hover:shadow-gold transition-shadow'}`}>
