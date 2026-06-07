@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { supabase, formatKRW, fmtDateTime } from '../../lib/supabase'
 import NumberInput from '../../components/NumberInput'
+import RankingAdmin from './RankingAdmin'
 
 const TABS = [
   { key: 'tournament', label: '🏆 대회' },
@@ -11,6 +12,7 @@ const TABS = [
   { key: 'quiz',       label: '📝 퀴즈' },
   { key: 'stock',      label: '💹 종목가' },
   { key: 'roulette',   label: '🎰 룰렛' },
+  { key: 'ranking',    label: '📊 순위' },
   { key: 'student',    label: '👥 학생' }
 ]
 
@@ -43,6 +45,7 @@ export default function Admin() {
       {tab === 'quiz'       && <QuizAdmin />}
       {tab === 'stock'      && <StockAdmin />}
       {tab === 'roulette'   && <RouletteAdmin />}
+      {tab === 'ranking'    && <RankingAdmin />}
       {tab === 'student'    && <StudentAdmin />}
     </div>
   )
