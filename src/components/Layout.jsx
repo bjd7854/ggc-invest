@@ -5,6 +5,7 @@ import { supabase, formatKRW } from '../lib/supabase'
 import NewsModal from './NewsModal'
 import LiveNotificationBar from './LiveNotificationBar'
 import InstallPWAPrompt from './InstallPWAPrompt'
+import FinalRankingModal from './FinalRankingModal'
 import { useRealtimeNews } from '../hooks/useRealtime'
 import { usePriceTick } from '../hooks/usePriceTick'
 
@@ -167,6 +168,7 @@ export default function Layout({ children }) {
 
       <LiveNotificationBar />
       <InstallPWAPrompt />
+      <FinalRankingModal />
     </div>
   )
 }
