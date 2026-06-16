@@ -194,8 +194,13 @@ function TournamentAdmin() {
   useEffect(() => { load() }, [])
 
   const end = async (id) => {
-    if (!confirm('대회를 강제 종료하시겠어요?')) return
-    await supabase.from('tournaments').update({ status: 'ended', end_at: new Date().toISOString() }).eq('id', id)
+    if (!confirm('대회를 종료하시겠어요?\n종료 시점의 순위가 최종 순위로 저장되고, 학생들에게 순위표가 표시됩니다.')) return
+    const { data, error } = await supabase.rpc('finalize_tournament', { p_tournament_id: id })
+    if (error) {
+      alert('종료 실패: ' + error.message)
+      return
+    }
+    alert(`✅ 대회 종료! 최종 순위 ${data?.count || 0}명 저장됨`)
     load()
   }
   const remove = async (id) => {
